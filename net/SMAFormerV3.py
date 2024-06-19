@@ -172,6 +172,7 @@ class Modulator(nn.Module):
         self.rate = [1, 6, 12, 18]
         self.with_pos = with_pos
         self.patch_size = 2
+        self.bias = nn.Parameter(torch.zeros(1, out_ch, 1, 1))
 
         # Channel Attention
         self.avg_pool = nn.AdaptiveAvgPool2d(1)
@@ -220,6 +221,7 @@ class Modulator(nn.Module):
         # (Softmax(PA @ CA)) @ SA
         out = pa_ca @ sa
         out = self.norm(self.output_conv(out))
+        out = out + self.bias
         synergistic_attn = out + res
         return synergistic_attn
 
@@ -348,8 +350,8 @@ class E_MLP(nn.Module):
         # Depthwise convolution
         self.depthwise_conv = nn.Conv2d(in_channels=forward_expansion * feature_size, out_channels=forward_expansion * feature_size, kernel_size=3, padding=1, groups=1)
 
-        # Pointwise convolution
-        self.pointwise_conv = nn.Conv2d(in_channels=forward_expansion * feature_size, out_channels=forward_expansion * feature_size, kernel_size=3, padding=1)
+        # pixelwise convolution
+        self.pixelwise_conv = nn.Conv2d(in_channels=forward_expansion * feature_size, out_channels=forward_expansion * feature_size, kernel_size=3, padding=1)
 
         self.linear2 = nn.Linear(forward_expansion * feature_size, feature_size)
 
@@ -361,7 +363,7 @@ class E_MLP(nn.Module):
         x = self.act(x)
         x = rearrange(x, 'b (h w) (c) -> b c h w', h=feature_size, w=feature_size)
         x = self.depthwise_conv(x)
-        x = self.pointwise_conv(x)
+        x = self.pixelwise_conv(x)
         x = rearrange(x, 'b c h w -> b (h w) (c)', h=feature_size, w=feature_size)
         out = self.linear2(x)
 
@@ -494,9 +496,9 @@ class Cross_AttentionBlock(nn.Module):
         out = self.conv_attn(out)
         return out * x2
 
-class SMAFormerV2(nn.Module):
+class SMAFormer(nn.Module):
     def __init__(self, args):
-        super(SMAFormerV2, self).__init__()
+        super(SMAFormer, self).__init__()
         self.args = args
         in_channels = 3
         n_classes = dataset.num_classes
@@ -624,8 +626,8 @@ class SMAFormerV2(nn.Module):
 
         return out
 
-#
-# '''检查模型是否能够创建并输出期望的维度'''
+
+'''检查模型是否能够创建并输出期望的维度'''
 # args = parse_args()
 # model = SMAFormerV2(args)
 # flops, params = get_model_complexity_info(model, input_res=(3, 512, 512), as_strings=True, print_per_layer_stat=False)
@@ -662,9 +664,11 @@ Pass, convergent speed little slower than CNN
 exp6: ViT -> SMAFormer
 success, but attn fusion caused convergent speed slower than CNN
 
-exp7: replace all SE, ASPP to Embedded_modulator.Synergistic_attn(MSA+(PA@CA@SA))
+exp7(SMAFormerV2): replace all SE, ASPP to Embedded_modulator.Synergistic_attn(MSA+(PA@CA@SA))
+but no tranposeConv(linear upsample+resConv)
 success
 
-exp8: replace all ResConv -> ConvTranspose to upsampling
+exp8(SMAFormerV3): replace all (ResConv & linear sample) -> ConvTranspose to upsampling
+success
 
 '''
