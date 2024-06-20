@@ -557,10 +557,10 @@ class SMAFormer(nn.Module):
                                                     num_layers=decoder_layer, fusion_gate=True)
 
         self.upsample_transpose4 = Upsample_Transpose(filters[3], filters[2], kernel=2, stride=2)
-        self.DecoderBlock4 = DecoderBlock(in_ch=filters[1], out_ch=filters[1], heads=8, dropout=0.1, forward_expansion=2,
-                                                    num_layers=decoder_layer, fusion_gate=True)
 
         self.upsample_transpose5 = Upsample_Transpose(filters[3], filters[2], kernel=2, stride=2)
+        self.DecoderBlock4 = DecoderBlock(in_ch=filters[2], out_ch=filters[2], heads=8, dropout=0.1, forward_expansion=2,
+                                                    num_layers=decoder_layer, fusion_gate=True)
         self.upsample_transpose6 = Upsample_Transpose(filters[2], filters[1], kernel=2, stride=2)
         self.output_layer1 = nn.Sequential(nn.Conv2d(filters[1], filters[0], 1))
         self.output_layer2 = nn.Sequential(nn.Conv2d(filters[0], n_classes, 1))
@@ -619,6 +619,12 @@ class SMAFormer(nn.Module):
         x8 = self.upsample_transpose4(x7)   #[16,128,64,64]->[16,64,128,128]
         x8 = torch.cat([x8, x2], dim=1) #[16,64,128,128]+[16,64,128,128]->[16,64+64,128,128]
         x8 = self.upsample_transpose5(x8)   #[16,64+64,128,128]->[16,64,256,256]
+        b, c, h, w = x8.size()
+        x8 = x8.view(b, c, h * w).contiguous().permute(0, 2, 1)  #[16,64,256,256]->[16,256*256,64]
+        x8 = self.DecoderBlock4(x8, x8)
+        b, hw, c = x8.size()
+        h = w = int(hw ** 0.5)
+        x8 = x8.permute(0, 2, 1).contiguous().view(b, c, h, w)  #[16,256*256,64]->[16,64,256,256]
         x8 = self.upsample_transpose6(x8)   #[16,64,256,256]->[16,32,512,512]
 
         out = self.output_layer1(x8)    #[16,32,512,512]->[16,16,512,512]
