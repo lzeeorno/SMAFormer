@@ -622,12 +622,12 @@ class SMAFormer(nn.Module):
         x8 = self.upsample_transpose5(x8)   #[16,64+64,128,128]->[16,64,256,256]
         b, c, h, w = x8.size()
         x8 = x8.view(b, c, h * w).contiguous().permute(0, 2, 1)  #[16,64,256,256]->[16,256*256,64]
-        b_e1, c_e1, h_e1, w_e1 = e1.size()
-        e1 = e1.view(b_e1, c_e1, h_e1 * w_e1).contiguous().permute(0, 2, 1)  # [16,256*256,32]->[16,32,256,256]
-        e1 = self.adjust(e1)    # [16,32,256,256]->[16,64,256,256]
         b_e1, hw_e1, c_e1 = e1.size()
         h_e1 = w_e1 = int(hw_e1 ** 0.5)
-        e1 = e1.permute(0, 2, 1).contiguous().view(b_e1, c_e1, h_e1, w_e1)  # [16,64,256,256]->[16,256*256,64]
+        e1 = e1.permute(0, 2, 1).contiguous().view(b_e1, c_e1, h_e1, w_e1)  # [16,256*256,32]->[16,32,256,256]#
+        e1 = self.adjust(e1)    # [16,32,256,256]->[16,64,256,256]
+        b_e1, c_e1, h_e1, w_e1 = e1.size()
+        e1 = e1.view(b_e1, c_e1, h_e1 * w_e1).contiguous().permute(0, 2, 1)  #[16,64,256,256]->[16,256*256,64]
         x8 = self.DecoderBlock4(x8, e1)
         b, hw, c = x8.size()
         h = w = int(hw ** 0.5)
@@ -640,22 +640,12 @@ class SMAFormer(nn.Module):
         return out
 
 
-'''检查模型是否能够创建并输出期望的维度'''
-args = parse_args()
-model = SMAFormer(args)
-# flops, params = get_model_complexity_info(model, input_res=(3, 512, 512), as_strings=True, print_per_layer_stat=False)
-# print('      - Flops:  ' + flops)
-# print('      - Params: ' + params)
-x = torch.randn(16, 3, 512, 512)
-with torch.no_grad():  # 在不计算梯度的情况下执行前向传播
-    out = model(x)
-print('Final Output:')
-print(out.shape)  # 输出预期是与分类头的输出通道数匹配的特征图
+
 
 
 '''
 exp1: se block -> Fusion 3 attn
-Fail
+success
 
 exp2: aspp -> Fusion 3 attn
 success, but the aspp convergent in epoch 5, this attn fusion only convergent after epoch 12
@@ -669,10 +659,10 @@ with CA val_dice2=11%
 without CA val_dice2=8% 
 
 exp4: replace Cross attn block
-Pass
+success
 
 exp5: 1 layer ViT -> 8 layer ViT
-Pass, convergent speed little slower than CNN
+success, convergent speed little slower than CNN
 
 exp6: ViT -> SMAFormer
 success, but attn fusion caused convergent speed slower than CNN
