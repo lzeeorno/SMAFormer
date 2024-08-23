@@ -12,7 +12,7 @@ SMAFormer: Synergistic Multi-Attention Transformer for Medical Image Segmentatio
 
 SMAFormer Pretrained file in LiTS2017 download from: [Pretrained model](https://drive.google.com/drive/folders/1f7-G3JB9sLZDd43fqZOql-peoYdXUCIk?usp=sharing)
 
-# 💗 Acknowledgement
+# 🧧 Acknowledgement
 
 This work was supported in part by the National Key R\&D Project of China (2018YFA0704102, 2018YFA0704104), in part by Natural Science Foundation of Guangdong Province (No. 2023A1515010673), and in part by Shenzhen Technology Innovation Commission (No. JSGG20220831110400001), in part by Shenzhen Development and Reform Commission (No. XMHT20220104009), in part by the Science and Technology Development Fund, Macau SAR, under Grant 0141/2023/RIA2 and 0193/2023/RIA3.
 
