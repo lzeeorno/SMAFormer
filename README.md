@@ -73,5 +73,10 @@ This work was supported in part by the National Key R\&D Project of China (2018Y
 If you find our work helpful for your research, please cite:
 
 ```bib
-
+@article{zheng2024smaformer,
+  title={SMAFormer: Synergistic Multi-Attention Transformer for Medical Image Segmentation},
+  author={Zheng, Fuchen and Chen, Xuhang and Liu, Weihuang and Li, Haolun and Lei, Yingtie and He, Jiahui and Pun, Chi-Man and Zhou, Shounjun},
+  journal={arXiv preprint arXiv:2409.00346},
+  year={2024}
+}
 ```
