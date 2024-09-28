@@ -648,3 +648,29 @@ class Unet_dict(nn.Module):
         u1 = F.relu(self.expansive_1(u2, c11))
         u0 = F.relu(self.expansive_0(u1, c00))
         return F.softmax(self.output(u0), dim=1)
+
+
+from ptflops import get_model_complexity_info
+import argparse
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('--ResUformer', default=None,
+                        help='model name: (default: arch+timestamp)')
+
+    args = parser.parse_args()
+
+    return args
+
+# '''检查模型是否能够创建并输出期望的维度'''
+# args = parse_args()
+# model = U_Net(args)
+# flops, params = get_model_complexity_info(model, input_res=(3, 512, 512), as_strings=True, print_per_layer_stat=False)
+# print('      - Flops:  ' + flops)
+# print('      - Params: ' + params)
+# x = torch.randn(1, 3, 512, 512)
+# with torch.no_grad():  # 在不计算梯度的情况下执行前向传播
+#     out = model(x)
+# print('Final Output:')
+# print(out.shape)  # 输出预期是与分类头的输出通道数匹配的特征图
