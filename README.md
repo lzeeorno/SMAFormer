@@ -1,3 +1,15 @@
+# 🛎 Citation
+
+If you find our work helpful for your research, please cite:
+
+```bib
+@article{zheng2024smaformer,
+  title={SMAFormer: Synergistic Multi-Attention Transformer for Medical Image Segmentation},
+  author={Zheng, Fuchen and Chen, Xuhang and Liu, Weihuang and Li, Haolun and Lei, Yingtie and He, Jiahui and Pun, Chi-Man and Zhou, Shounjun},
+  journal={arXiv preprint arXiv:2409.00346},
+  year={2024}
+}
+```
 # 📋SMAFormer
 
 SMAFormer: Synergistic Multi-Attention Transformer for Medical Image Segmentation
@@ -68,15 +80,4 @@ python train_lits2017_png.py
 
 This work was supported in part by the National Key R\&D Project of China (2018YFA0704102, 2018YFA0704104), in part by Natural Science Foundation of Guangdong Province (No. 2023A1515010673), and in part by Shenzhen Technology Innovation Commission (No. JSGG20220831110400001), in part by Shenzhen Development and Reform Commission (No. XMHT20220104009), in part by the Science and Technology Development Fund, Macau SAR, under Grant 0141/2023/RIA2 and 0193/2023/RIA3.
 
-# 🛎 Citation
 
-If you find our work helpful for your research, please cite:
-
-```bib
-@article{zheng2024smaformer,
-  title={SMAFormer: Synergistic Multi-Attention Transformer for Medical Image Segmentation},
-  author={Zheng, Fuchen and Chen, Xuhang and Liu, Weihuang and Li, Haolun and Lei, Yingtie and He, Jiahui and Pun, Chi-Man and Zhou, Shounjun},
-  journal={arXiv preprint arXiv:2409.00346},
-  year={2024}
-}
-```
