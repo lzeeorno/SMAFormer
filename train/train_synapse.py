@@ -49,7 +49,7 @@ def parse_args():
                         choices=['Unet', 'AttUnet', 'res_unet_plus', 'R2Unet', 'R2AttU_Net', 'sepnet', 'KiU_Net',
                                  'Unet3D', 'ResT', 'SMAFormer'])
     # pre trained
-    parser.add_argument('--pretrained', default=False, type=str2bool)
+    parser.add_argument('--pretrained', default=True, type=str2bool)
     # dataset name on log record
     parser.add_argument('--dataset', default="Synapse",
                         help='dataset name')
@@ -76,7 +76,7 @@ def parse_args():
                         metavar='LR', help='initial learning rate, Resunet=1e-4, R2Unet=1e-5, Unet=1e-2, ResUformer=0.001')
     parser.add_argument('--momentum', default=0.98, type=float,
                         help='momentum')
-    parser.add_argument('--weight_decay', default=1e-6, type=float,
+    parser.add_argument('--weight_decay', default=1e-06, type=float,
                         help='weight decay')
     parser.add_argument('--nesterov', default=True, type=str2bool,
                         help='nesterov')
@@ -342,7 +342,7 @@ def main():
         mask_paths = glob('../data/trainMask_synapse_png/*')
 
     train_img_paths, val_img_paths, train_mask_paths, val_mask_paths = \
-        train_test_split(img_paths, mask_paths, test_size=0.2, random_state=seed_value)
+        train_test_split(img_paths, mask_paths, test_size=0.25, random_state=seed_value)
     print("train_num:%s" % str(len(train_img_paths)))
     print("val_num:%s" % str(len(val_img_paths)))
 
@@ -352,7 +352,7 @@ def main():
         model = Unet.U_Net(args)
     if args.model_name == 'SMAFormer':
         model = SMAFormer(args)
-        pretrained_path = '../trained_models/xxx/xxx.pth'
+        pretrained_path = '../trained_models/Synapse_SMAFormer/2024-10-02-17-14-20/epoch448-val_loss:0.1609_model.pth'
         print('pretrained selected!')
 
     #multi gpu
@@ -363,7 +363,8 @@ def main():
     '''
     if args.pretrained == True:
         print('Pretrained model loading...')
-        load_pretrained_weights(model, pretrained_path)
+        # load_pretrained_weights(model, pretrained_path)
+        model.load_state_dict(torch.load(pretrained_path))
         print('Pretrained model loaded!')
     else:
         print('No Pretrained')
@@ -371,7 +372,7 @@ def main():
     print('{} parameters:{}'.format(args.model_name, count_params(model)))
     if args.optimizer == 'Adam':
         optimizer = torch.optim.AdamW(filter(lambda p: p.requires_grad, model.parameters()), lr=args.lr,
-                                      betas=(0.9, 0.999),
+                                      betas=(0.9, 0.999), eps=1e-08, amsgrad=False,
                                       weight_decay=args.weight_decay)
         print('AdamW optimizer loaded!')
         # optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=args.lr,
@@ -461,7 +462,7 @@ def main():
     #lr decay
     # scheduler_mult = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.98)
     # 使用 CosineAnnealingLR 调度器实现余弦退火学习率衰减策略
-    scheduler_mult = lr_scheduler.CosineAnnealingLR(optimizer, T_max=100, eta_min=6e-6)
+    scheduler_mult = lr_scheduler.CosineAnnealingLR(optimizer, T_max=50, eta_min=6e-6)
 
     for i, epoch in enumerate(range(args.epochs)):
         print('Epoch [%d/%d]' % (epoch, args.epochs))
@@ -477,10 +478,12 @@ def main():
 
         avg_dice = (train_log['dice_1']+train_log['dice_2']+train_log['dice_3']+train_log['dice_4']
                     +train_log['dice_5']+train_log['dice_6']+train_log['dice_7']+train_log['dice_8'])/8
+        # avg_dice = train_log['dice_2']
         if train_loss < 0:
             print('Gradient descent not exist!')
             break
         if (train_loss < best_train_loss) and (avg_dice > best_avg_dice):
+        # if (train_loss < best_train_loss):
             val_trigger = True
             best_train_loss = train_loss
             best_avg_dice = avg_dice

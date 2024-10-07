@@ -59,7 +59,7 @@ def parse_args():
     parser.add_argument('--loss', default='BCEDiceLoss')
 
     # training
-    parser.add_argument('--epochs', default=900, type=int, metavar='N',
+    parser.add_argument('--epochs', default=1000, type=int, metavar='N',
                         help='number of total epochs to run')
     parser.add_argument('--early-stop', default=500, type=int,
                         metavar='N', help='early stopping (default: 30)')
@@ -329,7 +329,8 @@ def main():
     '''
     if args.pretrained == True:
         print('Pretrained model loading...')
-        load_pretrained_weights(model, pretrained_path)
+        # load_pretrained_weights(model, pretrained_path)
+        model.load_state_dict(torch.load(pretrained_path))
         print('Pretrained model loaded!')
     else:
         print('No Pretrained')
