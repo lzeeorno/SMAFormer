@@ -352,7 +352,7 @@ def main():
         model = Unet.U_Net(args)
     if args.model_name == 'SMAFormer':
         model = SMAFormer(args)
-        pretrained_path = '../trained_models/Synapse_SMAFormer/2024-10-02-17-14-20/epoch448-val_loss:0.1609_model.pth'
+        pretrained_path = '../trained_models/Synapse_SMAFormer/xxx/xxx.pth'
         print('pretrained selected!')
 
     #multi gpu
