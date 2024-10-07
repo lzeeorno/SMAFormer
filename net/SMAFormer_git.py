@@ -25,8 +25,10 @@ from dataset.dataset import synapse_num_classes, lits_num_classes
 def parse_args():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--ResUformer', default=None,
+    parser.add_argument('--SMAFormer', default=None,
                         help='model name: (default: arch+timestamp)')
+    parser.add_argument('--dataset', default="Synapse",
+                        help='dataset name')
 
     args = parser.parse_args()
 
