@@ -31,8 +31,7 @@ pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
 pip install torch==2.0.0+cu118 torchvision==0.15.1+cu118 torchaudio==2.0.1+cu118 -f https://download.pytorch.org/whl/torch_stable.html
 ```
 3. `pip install tqdm scikit-learn albumentations==1.0.3 pandas einops axial_attention`
-
-
+4. `pip install xlsxwriter`
 5. `python train_lits2017_png.py`
 
 
