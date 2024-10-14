@@ -342,7 +342,7 @@ def main():
         mask_paths = glob('../data/trainMask_synapse_png/*')
 
     train_img_paths, val_img_paths, train_mask_paths, val_mask_paths = \
-        train_test_split(img_paths, mask_paths, test_size=0.25, random_state=seed_value)
+        train_test_split(img_paths, mask_paths, test_size=0.2, random_state=seed_value)
     print("train_num:%s" % str(len(train_img_paths)))
     print("val_num:%s" % str(len(val_img_paths)))
 
