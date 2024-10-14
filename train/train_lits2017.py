@@ -64,7 +64,7 @@ def parse_args():
     parser.add_argument('--early-stop', default=500, type=int,
                         metavar='N', help='early stopping (default: 30)')
     parser.add_argument('--gamma', default=1.0, type=float)
-    parser.add_argument('-b', '--batch_size', default=12, type=int,
+    parser.add_argument('-b', '--batch_size', default=16, type=int,
                         metavar='N', help='check your GPU')
     parser.add_argument('--optimizer', default='SGD',
                         choices=['Adam', 'SGD'])
@@ -465,7 +465,7 @@ def main():
             print('lr %.8f - val_loss %.4f - val_iou %.4f - val_dice_1 %.4f - val_dice_2 %.4f - val_HD95_avg %.4f'
                   % (train_log['lr'], val_log['loss'], val_log['iou'], val_log['dice_1'], val_log['dice_2'], val_log['HD95_avg']))
 
-            tmp1 = pd.Series([
+            tmp = pd.Series([
                 epoch,
                 train_log['lr'],
                 train_log['loss'],
@@ -482,10 +482,10 @@ def main():
                       'val_loss', 'val_iou', 'val_dice_1', 'val_dice_2', 'HD95_avg'])
 
             # # 确保 log 的列顺序与 tmp 的索引顺序一致
-            log = log.reindex(columns=tmp1.index.tolist())
+            log = log.reindex(columns=tmp.index.tolist())
             # log = log._append(tmp, ignore_index=True)
             # 使用 pd.concat 替代 append
-            log = pd.concat([log, tmp1.to_frame().T], ignore_index=True)
+            log = pd.concat([log, tmp.to_frame().T], ignore_index=True)
             log.to_csv('../trained_models/{}_{}/{}/Validation_{}_{}_{}_batchsize_{}.csv'.format(args.dataset, args.model_name, timestamp, args.model_name,
                                                                                  args.aug, args.loss, args.batch_size),index=False)
             print('save result to csv ->')
@@ -502,21 +502,26 @@ def main():
                     print("=> early stopping")
                     break
         else:
-            tmp2 = pd.Series([
+            tmp = pd.Series([
                 epoch,
                 train_log['lr'],
                 train_log['loss'],
                 # train_log['iou'],
                 train_log['dice_1'],
                 train_log['dice_2'],
-                # train_log['HD95'],
-            ], index=['epoch', 'lr', 'loss', 'dice_1', 'dice_2'])
+                '',
+                '',
+                '',
+                '',
+                '',
+            ], index=['epoch', 'lr', 'loss', 'dice_1', 'dice_2',
+                      'val_loss', 'val_iou', 'val_dice_1', 'val_dice_2', 'HD95_avg'])
 
             # # 确保 log 的列顺序与 tmp 的索引顺序一致
-            log = log.reindex(columns=tmp2.index.tolist())
+            log = log.reindex(columns=tmp.index.tolist())
             # log = log._append(tmp, ignore_index=True)
             # 使用 pd.concat 替代 append
-            log = pd.concat([log, tmp2.to_frame().T], ignore_index=True)
+            log = pd.concat([log, tmp.to_frame().T], ignore_index=True)
             log.to_csv('../trained_models/{}_{}/{}/Train_{}_{}_{}_batchsize_{}.csv'.format(args.dataset, args.model_name, timestamp,
                                                                                  args.model_name, args.aug, args.loss,
                                                                                  args.batch_size), index=False)
