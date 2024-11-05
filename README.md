@@ -13,6 +13,7 @@ If you find our work helpful for your research, please cite:
 # 📋SMAFormer
 
 SMAFormer: Synergistic Multi-Attention Transformer for Medical Image Segmentation
+[Vedio introduction](https://www.bilibili.com/video/BV1FLDsYqExZ/)
 
 [Fuchen Zheng](https://lzeeorno.github.io/),  [Xuhang Chen](https://cxh.netlify.app/), Weihuang Liu, Haolun Li, Yingtie Lei, Jiahui He, [Chi-Man Pun](https://www.cis.um.edu.mo/~cmpun/) 📮and [Shoujun Zhou](https://people.ucas.edu.cn/~sjzhou?language=en) 📮( 📮 Corresponding authors)
 
