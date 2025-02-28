@@ -18,7 +18,7 @@ from torch.nn import Softmax
 from einops import rearrange
 import math
 from ptflops import get_model_complexity_info
-from dataset.dataset import synapse_num_classes, lits_num_classes
+from dataset.SMAFormer_dataset import synapse_num_classes, lits_num_classes
 
 
 
@@ -27,9 +27,8 @@ def parse_args():
 
     parser.add_argument('--SMAFormer', default=None,
                         help='model name: (default: arch+timestamp)')
-    parser.add_argument('--dataset', default="Synapse",
-                        help='dataset name')
-
+    parser.add_argument('--dataset', default="LiTS2017",
+                        help='LiTS2017, Synapse')
     args = parser.parse_args()
 
     return args
@@ -209,25 +208,43 @@ class Modulator(nn.Module):
         self.pj_conv = nn.Conv2d(self.in_ch, self.out_ch, kernel_size=self.patch_size + 1,
                          stride=self.patch_size, padding=self.patch_size // 2)
         self.pos_conv = nn.Conv2d(self.out_ch, self.out_ch, kernel_size=3, padding=1, groups=self.out_ch, bias=True)
-        self.layernorm = nn.LayerNorm(self.out_ch, eps=1e-6)
-
+        self.layer_norm = nn.LayerNorm(out_ch, eps=1e-6)
+        # ---
+        # 替换 LayerNorm 为 BatchNorm2d
+        self.layer_scale = nn.Parameter(torch.ones(1, out_ch, 1, 1) * 0.1)  # 调整形状匹配 4D 输入
+        # ---
+        self.gamma1 = nn.Parameter(torch.ones(1) * 0.1)
+        self.gamma2 = nn.Parameter(torch.ones(1) * 0.1)
+        self.gamma3 = nn.Parameter(torch.ones(1) * 0.1)
+        self.output_conv = nn.Conv2d(in_ch, out_ch, kernel_size=1)
     def forward(self, x):
-        res = x
+        # 替换 LayerNorm 为 BatchNorm2d
+        res = self.layer_scale * self.norm(x)
+        # res = x
         pa = self.PA(x)
         ca = self.CA(x)
-
         # Softmax(PA @ CA)
-        pa_ca = torch.softmax(pa @ ca, dim=-1)
-
+        pa_ca = torch.softmax(self.gamma1 * pa + self.gamma2 * ca, dim=-1)
         # Spatial Attention
         sa = self.SA(x)
-
         # (Softmax(PA @ CA)) @ SA
-        out = pa_ca @ sa
+        out = pa_ca + self.gamma3 * sa
         out = self.norm(self.output_conv(out))
         out = out + self.bias
         synergistic_attn = out + res
         return synergistic_attn
+
+    # def forward(self, x):
+    #     # 替换 LayerNorm 为 BatchNorm2d
+    #     x = self.layer_scale * self.norm(x)
+    #     pa = self.PA(x)
+    #     ca = self.CA(x)
+    #     sa = self.SA(x)
+    #     # 使用加权求和代替矩阵乘法
+    #     fusion = self.gamma1 * pa + self.gamma2 * ca + self.gamma3 * sa
+    #     fusion = self.norm(self.output_conv(fusion))
+    #     synergistic_attn = fusion + x  # 残差连接
+    #     return synergistic_attn
 
     # def forward(self, x):
     #     pa_out = self.pa(x)
@@ -247,7 +264,7 @@ class Modulator(nn.Module):
             pos = proj * self.sigmoid(self.pos_conv(proj))
 
         pos = pos.flatten(2).transpose(1, 2)  # BCHW -> BNC
-        embedded_pos = self.layernorm(pos)
+        embedded_pos = self.layer_norm(pos)
 
         return embedded_pos
 
@@ -349,6 +366,10 @@ class E_MLP(nn.Module):
         self.linear1 = nn.Linear(embed_dim, forward_expansion * embed_dim)
         self.act = nn.GELU()
 
+        # 添加 LayerNorm 和 LayerScale
+        # self.layer_norm = nn.LayerNorm(forward_expansion * embed_dim)
+        # self.layer_scale = nn.Parameter(torch.ones(1, forward_expansion * embed_dim) * 0.1)
+
         # Corrected Depthwise convolution with reduced parameters
         self.depthwise_conv = nn.Conv2d(
             in_channels=forward_expansion * embed_dim,
@@ -426,14 +447,20 @@ class SMAFormerBlock(nn.Module):
         self.fusion_gate = fusion_gate
         self.dropout = nn.Dropout(dropout) if dropout > 0. else nn.Identity()
 
+        # 添加 LayerScale 参数
+        self.layer_scale1 = nn.Parameter(torch.ones(1, ch_out) * 0.1)  # 初始化为 0.1
+        self.layer_scale2 = nn.Parameter(torch.ones(1, ch_out) * 0.1)  # 初始化为 0.1
+
     def forward(self, value, key, query, res):
         if self.fusion_gate:
             attention = self.synergistic_multi_attention(query, key, value)
         else:
             attention = self.MSA(query, key, value)
-        query = self.dropout(self.norm1(attention + res))
+
+        # 使用 Pre-LayerNorm 和 LayerScale
+        query = res + self.layer_scale1 * self.dropout(self.norm1(attention))
         feed_forward = self.e_mlp(query)
-        out = self.dropout(self.norm2(feed_forward + query))
+        out = query + self.layer_scale2 * self.dropout(self.norm2(feed_forward))
         return out
 
 class EncoderBlock(nn.Module):
@@ -444,11 +471,17 @@ class EncoderBlock(nn.Module):
         ])
         self.in_ch = in_ch
         self.out_ch = out_ch
+        self.norm = nn.LayerNorm(out_ch)
+
+        # LayerScale 参数（适用于整个 EncoderBlock）
+        self.layer_scale = nn.Parameter(torch.ones(1, out_ch) * 0.1)  # 初始化为 0.1
 
     def forward(self, x, res):
         '''[B, H*W, C]'''
         for layer in self.layers:
             x = layer(res, res, x, x)
+        # 使用 LayerScale
+        x = self.layer_scale * self.norm(x)
 
         return x
 
@@ -460,11 +493,17 @@ class DecoderBlock(nn.Module):
         ])
         self.in_ch = in_ch
         self.out_ch = out_ch
+        self.norm = nn.LayerNorm(out_ch)
+
+        # LayerScale 参数（适用于整个 DecoderBlock）
+        self.layer_scale = nn.Parameter(torch.ones(1, out_ch) * 0.1)  # 初始化为 0.1
 
     def forward(self, x, res):
         '''[B, H*W, C]'''
         for layer in self.layers:
             x = layer(res, res, x, x)
+        # 使用 LayerScale
+        x = self.layer_scale * self.norm(x)
 
         return x
 
@@ -545,10 +584,11 @@ class SMAFormer(nn.Module):
     def __init__(self, args):
         super(SMAFormer, self).__init__()
         self.args = args
-        in_channels = 1
         if args.dataset == 'LiTS2017':
+            in_channels = 1
             n_classes = lits_num_classes
         elif args.dataset == 'Synapse':
+            in_channels = 1
             n_classes = synapse_num_classes
         patch_size = 2
         filters = [16, 32, 64, 128, 256, 512]
@@ -688,7 +728,7 @@ class SMAFormer(nn.Module):
         return out
 
 
-'''检查模型是否能够创建并输出期望的维度'''
+# '''检查模型是否能够创建并输出期望的维度'''
 # args = parse_args()
 # model = SMAFormer(args)
 # flops, params = get_model_complexity_info(model, input_res=(1, 512, 512), as_strings=True, print_per_layer_stat=False)
