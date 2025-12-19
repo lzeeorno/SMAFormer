@@ -33,7 +33,6 @@ pip install torch==2.0.0+cu118 torchvision==0.15.1+cu118 torchaudio==2.0.1+cu118
 ```
 3. `pip install tqdm scikit-learn albumentations==1.0.3 pandas einops axial_attention`
 4. `pip install xlsxwriter`
-5. `python train_lits2017_png.py`
 
 
 ## 1. Prepare the dataset
