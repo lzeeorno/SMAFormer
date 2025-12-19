@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMAFormerV2 架构可视化</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #fff;
+        }
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            background: linear-gradient(45deg, #ff6b6b, #ffd93d);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        .stats-bar {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .stat-item {
+            background: rgba(255,255,255,0.1);
+            padding: 15px 25px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #ff6b6b;
+        }
+        .stat-label {
+            font-size: 0.9em;
+            color: #aaa;
+        }
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .legend-box {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+        }
+        .pretrained { background: linear-gradient(135deg, #00d4ff, #0099cc); border: 2px solid #00ffff; }
+        .random-init { background: linear-gradient(135deg, #ff6b6b, #cc5555); border: 2px solid #ff8888; }
+        .sma-module { background: linear-gradient(135deg, #ffd93d, #cc9900); border: 2px solid #ffdd55; }
+        .hybrid { background: linear-gradient(135deg, #9b59b6, #6c3483); border: 2px solid #bb77dd; }
+        
+        .architecture {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+        .section {
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .section-title {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(255,255,255,0.2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .section-title .badge {
+            font-size: 0.6em;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: normal;
+        }
+        .badge-pretrained { background: #00d4ff; color: #000; }
+        .badge-random { background: #ff6b6b; color: #000; }
+        .badge-sma { background: #ffd93d; color: #000; }
+        
+        .encoder-flow {
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .stage-box {
+            background: linear-gradient(135deg, #1e3a5f, #2d5a87);
+            border: 3px solid #00d4ff;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            min-width: 180px;
+            position: relative;
+            box-shadow: 0 0 20px rgba(0,212,255,0.3);
+        }
+        .stage-box.pretrained {
+            border-color: #00d4ff;
+            box-shadow: 0 0 25px rgba(0,212,255,0.5);
+        }
+        .stage-box.random {
+            border-color: #ff6b6b;
+            box-shadow: 0 0 25px rgba(255,107,107,0.5);
+            background: linear-gradient(135deg, #3d2020, #5a3030);
+        }
+        .stage-box.sma {
+            border-color: #ffd93d;
+            box-shadow: 0 0 25px rgba(255,217,61,0.5);
+            background: linear-gradient(135deg, #3d3520, #5a4a30);
+        }
+        .stage-title {
+            font-weight: bold;
+            font-size: 1.2em;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+        .stage-details {
+            font-size: 0.85em;
+            color: #ccc;
+            line-height: 1.6;
+        }
+        .arrow {
+            font-size: 2em;
+            color: #00d4ff;
+        }
+        .arrow-down {
+            font-size: 2em;
+            color: #ffd93d;
+            text-align: center;
+            margin: 10px 0;
+        }
+        
+        .decoder-flow {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+        .decoder-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .decoder-block {
+            background: linear-gradient(135deg, #3d2020, #5a3030);
+            border: 3px solid #ff6b6b;
+            border-radius: 12px;
+            padding: 18px;
+            text-align: center;
+            min-width: 160px;
+            box-shadow: 0 0 20px rgba(255,107,107,0.3);
+        }
+        .module-box {
+            background: rgba(255,255,255,0.08);
+            border: 2px dashed rgba(255,255,255,0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .module-title {
+            font-weight: bold;
+            color: #ffd93d;
+            margin-bottom: 8px;
+        }
+        .module-list {
+            font-size: 0.85em;
+            color: #bbb;
+            text-align: left;
+            padding-left: 15px;
+        }
+        .module-list li {
+            margin: 5px 0;
+        }
+        
+        .skip-connections {
+            position: relative;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .skip-label {
+            background: #ffd93d;
+            color: #000;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+        
+        .component-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .component-card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 10px;
+            padding: 20px;
+        }
+        .component-card h4 {
+            color: #ff6b6b;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        .component-card p {
+            font-size: 0.9em;
+            color: #aaa;
+            line-height: 1.5;
+        }
+        .component-card code {
+            background: rgba(255,107,107,0.2);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            color: #ff6b6b;
+        }
+        
+        .flow-diagram {
+            background: rgba(0,0,0,0.3);
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px 0;
+        }
+        .flow-title {
+            text-align: center;
+            font-size: 1.3em;
+            margin-bottom: 25px;
+            color: #ffd93d;
+        }
+        .flow-steps {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .flow-step {
+            background: linear-gradient(135deg, #2d3a4f, #3d4a5f);
+            border-radius: 8px;
+            padding: 12px 18px;
+            font-size: 0.9em;
+            text-align: center;
+        }
+        .flow-step.input { border: 2px solid #4CAF50; }
+        .flow-step.process { border: 2px solid #2196F3; }
+        .flow-step.sma { border: 2px solid #ffd93d; }
+        .flow-step.output { border: 2px solid #ff9800; }
+        
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .summary-table th, .summary-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .summary-table th {
+            background: rgba(255,107,107,0.2);
+            color: #ff6b6b;
+        }
+        .summary-table tr:hover {
+            background: rgba(255,255,255,0.05);
+        }
+        .status-tag {
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+        .status-pretrained { background: #00d4ff; color: #000; }
+        .status-random { background: #ff6b6b; color: #000; }
+        .status-sma { background: #ffd93d; color: #000; }
+        
+        .code-structure {
+            background: rgba(0,0,0,0.4);
+            border-radius: 10px;
+            padding: 20px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9em;
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+        .code-structure .class-name { color: #ffd93d; }
+        .code-structure .method-name { color: #00d4ff; }
+        .code-structure .comment { color: #888; }
+        .code-structure .indent { margin-left: 20px; }
+        .code-structure .indent2 { margin-left: 40px; }
+        
+        .call-graph {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 20px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        .call-node {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .call-arrow {
+            color: #ffd93d;
+            font-size: 1.2em;
+        }
+        .call-method {
+            background: rgba(255,255,255,0.1);
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-family: monospace;
+        }
+        .call-description {
+            color: #888;
+            font-size: 0.85em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧠 SMAFormerV2 架构详解</h1>
+        <p class="subtitle">Synergistic Multi-Attention Transformer V2 - 基于 Swin Transformer 的医学图像分割模型</p>
+        
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="stat-value">~42.66M</div>
+                <div class="stat-label">总参数量</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">30.50</div>
+                <div class="stat-label">GFLOPs</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">94.35%</div>
+                <div class="stat-label">Encoder预训练覆盖率</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">Swin-Tiny</div>
+                <div class="stat-label">Backbone</div>
+            </div>
+        </div>
+        
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-box pretrained"></div>
+                <span>预训练权重 (Pretrained)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-box sma-module"></div>
+                <span>SMA增强模块</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-box random-init"></div>
+                <span>随机初始化 (Random Init)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-box hybrid"></div>
+                <span>跳跃连接 (Skip Connection)</span>
+            </div>
+        </div>
+        
+        <div class="architecture">
+            <!-- Design Philosophy -->
+            <div class="section">
+                <h2 class="section-title">💡 设计思路</h2>
+                <div class="component-grid">
+                    <div class="component-card">
+                        <h4>📐 架构设计原则</h4>
+                        <p>
+                            SMAFormerV2 基于 IEEE BIBM 2024 论文提出的 SMAFormer 架构，
+                            将原有的 ViT backbone 替换为 Swin Transformer。这一设计选择的主要目的是：
+                            <br><br>
+                            1. <strong>利用分层特征</strong>：Swin 提供 4 个不同分辨率的特征层<br>
+                            2. <strong>预训练权重迁移</strong>：直接加载 ImageNet 预训练权重<br>
+                            3. <strong>计算效率提升</strong>：窗口注意力机制降低计算复杂度
+                        </p>
+                    </div>
+                    
+                    <div class="component-card">
+                        <h4>🎯 核心创新点</h4>
+                        <p>
+                            <strong>1. SMA 协同多注意力机制</strong><br>
+                            融合像素、通道和空间三种注意力，增强特征表达<br><br>
+                            <strong>2. E-MLP 增强型MLP</strong><br>
+                            在 MLP 中加入深度可分离卷积，捕获局部上下文<br><br>
+                            <strong>3. 边缘增强模块</strong><br>
+                            使用 Sobel 算子提升分割边界精度
+                        </p>
+                    </div>
+                    
+                    <div class="component-card">
+                        <h4>⚡ 性能优势</h4>
+                        <p>
+                            与原版 SMAFormer 相比：<br>
+                            • 参数量减少 69% (139M → 42.66M)<br>
+                            • 计算量减少 76% (125 GMac → 30.50 GFLOPs)<br>
+                            • 预训练权重利用率高达 94.35%<br>
+                            • 训练收敛速度更快
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Code Structure -->
+            <div class="section">
+                <h2 class="section-title">📁 代码结构与目录骨架</h2>
+                <div class="code-structure">
+                    <div><span class="comment"># SMAFormerV2.py 目录结构</span></div>
+                    <br>
+                    <div><span class="class-name">class PixelAttention</span> <span class="comment">  # 像素级注意力 - 关注每个像素的重要性</span></div>
+                    <div><span class="class-name">class ChannelAttention</span> <span class="comment"> # 通道注意力 - SE风格的通道重要性加权</span></div>
+                    <div><span class="class-name">class SpatialAttention</span> <span class="comment"> # 空间注意力 - 关注空间位置重要性</span></div>
+                    <br>
+                    <div><span class="class-name">class SynergisticMultiAttention</span> <span class="comment"># SMA核心模块 - 协同三种注意力</span></div>
+                    <div class="indent">├─ <span class="method-name">pixel_attn</span> <span class="comment">    # 像素注意力分支</span></div>
+                    <div class="indent">├─ <span class="method-name">channel_attn</span> <span class="comment">  # 通道注意力分支</span></div>
+                    <div class="indent">├─ <span class="method-name">spatial_attn</span> <span class="comment">  # 空间注意力分支</span></div>
+                    <div class="indent">├─ <span class="method-name">fusion_proj</span> <span class="comment">   # 协同融合投影</span></div>
+                    <div class="indent">└─ <span class="method-name">out_proj</span> <span class="comment">      # 输出投影 + 残差</span></div>
+                    <br>
+                    <div><span class="class-name">class EnhancedMLP</span> <span class="comment"># E-MLP - 增强型MLP，加入深度可分离卷积</span></div>
+                    <div class="indent">├─ <span class="method-name">fc1</span> <span class="comment">           # 线性投影到高维</span></div>
+                    <div class="indent">├─ <span class="method-name">dwconv</span> <span class="comment">        # 深度可分离卷积 3x3</span></div>
+                    <div class="indent">├─ <span class="method-name">pwconv</span> <span class="comment">        # 点卷积 1x1</span></div>
+                    <div class="indent">└─ <span class="method-name">fc2</span> <span class="comment">           # 线性投影回原维度</span></div>
+                    <br>
+                    <div><span class="class-name">class SMATransformerBlock</span> <span class="comment"># SMA Transformer块 (论文Figure 2)</span></div>
+                    <div class="indent">├─ <span class="method-name">norm1</span> / <span class="method-name">norm2</span> <span class="comment"> # LayerNorm归一化</span></div>
+                    <div class="indent">├─ <span class="method-name">sma</span> <span class="comment">           # SMA注意力模块</span></div>
+                    <div class="indent">├─ <span class="method-name">emlp</span> <span class="comment">          # E-MLP模块</span></div>
+                    <div class="indent">└─ <span class="method-name">drop_path</span> <span class="comment">     # 随机深度(DropPath)</span></div>
+                    <br>
+                    <div><span class="class-name">class ResidualConvBlock</span> <span class="comment"># 残差卷积块 - 用于下采样/上采样</span></div>
+                    <div><span class="class-name">class EdgeEnhancement</span> <span class="comment">  # 边缘增强模块 - Sobel算子 + 特征融合</span></div>
+                    <br>
+                    <div><span class="class-name">class DecoderStage</span> <span class="comment"># 解码器阶段</span></div>
+                    <div class="indent">├─ <span class="method-name">upsample</span> <span class="comment">      # 转置卷积上采样 2x</span></div>
+                    <div class="indent">├─ <span class="method-name">fusion</span> <span class="comment">        # 跳跃连接融合</span></div>
+                    <div class="indent">├─ <span class="method-name">blocks</span> <span class="comment">        # SMA Transformer Blocks</span></div>
+                    <div class="indent">└─ <span class="method-name">norm</span> <span class="comment">          # 最终归一化</span></div>
+                    <br>
+                    <div><span class="class-name">class SMAFormerV2</span> <span class="comment"># 主模型类</span></div>
+                    <div class="indent">├─ <span class="method-name">input_proj</span> <span class="comment">    # 输入投影层 (3x3 Conv + ReLU)</span></div>
+                    <div class="indent">├─ <span class="method-name">encoder</span> <span class="comment">       # Swin Transformer Encoder (预训练)</span></div>
+                    <div class="indent">├─ <span class="method-name">sma_stages</span> <span class="comment">    # 4个SMA增强模块</span></div>
+                    <div class="indent">├─ <span class="method-name">decoder4/3/2</span> <span class="comment">  # 对称解码器阶段</span></div>
+                    <div class="indent">├─ <span class="method-name">final_upsample</span> <span class="comment"># 最终4x上采样</span></div>
+                    <div class="indent">└─ <span class="method-name">output</span> <span class="comment">        # 边缘增强输出层</span></div>
+                </div>
+            </div>
+
+            <!-- Encoder Section -->
+            <div class="section">
+                <h2 class="section-title">
+                    📥 Encoder - Swin Backbone + SMA Enhancement
+                    <span class="badge badge-pretrained">✓ 加载预训练权重 94.35%</span>
+                </h2>
+                <p style="color: #aaa; margin-bottom: 20px;">
+                    预训练模型: <code>swin_tiny_patch4_window7_224.pth</code> (ImageNet-1K) | 每阶段后添加SMA增强
+                </p>
+                
+                <div class="encoder-flow">
+                    <div class="stage-box pretrained">
+                        <div class="stage-title">输入</div>
+                        <div class="stage-details">
+                            3 × 256 × 256<br>
+                            RGB 图像
+                        </div>
+                    </div>
+                    
+                    <div class="arrow">→</div>
+                    
+                    <div class="stage-box pretrained">
+                        <div class="stage-title">Input Projection</div>
+                        <div class="stage-details">
+                            3×3 Conv + ReLU<br>
+                            Output: 3 × 256 × 256<br>
+                            <span style="color:#888">预处理层</span>
+                        </div>
+                    </div>
+                    
+                    <div class="arrow">→</div>
+                    
+                    <div class="stage-box pretrained">
+                        <div class="stage-title">Patch Embed</div>
+                        <div class="stage-details">
+                            Patch Size: 4×4<br>
+                            Output: 96 × 64 × 64<br>
+                            <span style="color:#00ff88">✓ Pretrained</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="arrow-down">⬇</div>
+                
+                <div class="encoder-flow">
+                    <div class="stage-box pretrained">
+                        <div class="stage-title">Stage 1</div>
+                        <div class="stage-details">
+                            Depth: 2, Heads: 3<br>
+                            Dim: 96<br>
+                            Output: 96 × 64 × 64<br>
+                            <span style="color:#00ff88">✓ Pretrained</span>
+                        </div>
+                    </div>
+                    
+                    <div class="arrow">→</div>
+                    
+                    <div class="stage-box sma">
+                        <div class="stage-title">SMA 1</div>
+                        <div class="stage-details">
+                            Dim: 96<br>
+                            协同多注意力增强<br>
+                            <span style="color:#ffd93d">★ SMA Enhanced</span>
+                        </div>
+                    </div>
+                    
+                    <div class="arrow">→</div>
+                    
+                    <div class="stage-box pretrained">
+                        <div class="stage-title">Stage 2</div>
+                        <div class="stage-details">
+                            Depth: 2, Heads: 6<br>
+                            Dim: 192<br>
+                            Output: 192 × 32 × 32<br>
+                            <span style="color:#00ff88">✓ Pretrained</span>
+                        </div>
+                    </div>
+                    
+                    <div class="arrow">→</div>
+                    
+                    <div class="stage-box sma">
+                        <div class="stage-title">SMA 2</div>
+                        <div class="stage-details">
+                            Dim: 192<br>
+                            协同多注意力增强<br>
+                            <span style="color:#ffd93d">★ SMA Enhanced</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="arrow-down">⬇</div>
+                
+                <div class="encoder-flow">
+                    <div class="stage-box pretrained">
+                        <div class="stage-title">Stage 3</div>
+                        <div class="stage-details">
+                            Depth: 6, Heads: 12<br>
+                            Dim: 384<br>
+                            Output: 384 × 16 × 16<br>
+                            <span style="color:#00ff88">✓ Pretrained</span>
+                        </div>
+                    </div>
+                    
+                    <div class="arrow">→</div>
+                    
+                    <div class="stage-box sma">
+                        <div class="stage-title">SMA 3</div>
+                        <div class="stage-details">
+                            Dim: 384<br>
+                            协同多注意力增强<br>
+                            <span style="color:#ffd93d">★ SMA Enhanced</span>
+                        </div>
+                    </div>
+                    
+                    <div class="arrow">→</div>
+                    
+                    <div class="stage-box pretrained">
+                        <div class="stage-title">Stage 4</div>
+                        <div class="stage-details">
+                            Depth: 2, Heads: 24<br>
+                            Dim: 768<br>
+                            Output: 768 × 8 × 8<br>
+                            <span style="color:#00ff88">✓ Pretrained</span>
+                        </div>
+                    </div>
+                    
+                    <div class="arrow">→</div>
+                    
+                    <div class="stage-box sma">
+                        <div class="stage-title">SMA 4</div>
+                        <div class="stage-details">
+                            Dim: 768<br>
+                            协同多注意力增强<br>
+                            <span style="color:#ffd93d">★ SMA Enhanced</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="skip-connections">
+                    <span class="skip-label">⬇ 多尺度特征 F1(96), F2(192), F3(384), F4(768) 送入 Decoder ⬇</span>
+                </div>
+            </div>
+            
+            <!-- Decoder Section -->
+            <div class="section">
+                <h2 class="section-title">
+                    📤 Symmetric Decoder (对称解码器)
+                    <span class="badge badge-random">随机初始化</span>
+                </h2>
+                <p style="color: #aaa; margin-bottom: 20px;">
+                    每个解码阶段包含: 转置卷积上采样 → 跳跃连接融合 → SMA Transformer Blocks
+                </p>
+                
+                <div class="decoder-flow">
+                    <!-- Decoder Stage 4 -->
+                    <div class="decoder-row">
+                        <div class="decoder-block">
+                            <div class="stage-title">Decoder Stage 4</div>
+                            <div class="stage-details">
+                                Input: 768 × 8 × 8<br>
+                                Output: 384 × 16 × 16
+                            </div>
+                            <div class="module-box">
+                                <div class="module-title">转置卷积上采样</div>
+                                <ul class="module-list">
+                                    <li>ConvTranspose2d(768→384, k=2, s=2)</li>
+                                    <li>上采样2倍</li>
+                                </ul>
+                            </div>
+                            <div class="module-box">
+                                <div class="module-title">SMA Transformer Blocks</div>
+                                <ul class="module-list">
+                                    <li>2个 SMA Transformer Block</li>
+                                    <li>每个block: SMA + E-MLP</li>
+                                    <li>LayerNorm + 残差连接</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="arrow">→</div>
+                        
+                        <div style="text-align:center; color:#ffd93d;">
+                            + Skip F3<br>
+                            (384 × 16 × 16)
+                        </div>
+                    </div>
+                    
+                    <!-- Decoder Stage 3 -->
+                    <div class="decoder-row">
+                        <div class="decoder-block">
+                            <div class="stage-title">Decoder Stage 3</div>
+                            <div class="stage-details">
+                                Input: 384 × 16 × 16<br>
+                                Output: 192 × 32 × 32
+                            </div>
+                            <div class="module-box">
+                                <div class="module-title">Fusion + SMA Blocks</div>
+                                <ul class="module-list">
+                                    <li>Concat后1×1 Conv融合</li>
+                                    <li>2个 SMA Transformer Block</li>
+                                    <li>输出192通道特征</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="arrow">→</div>
+                        
+                        <div style="text-align:center; color:#ffd93d;">
+                            + Skip F2<br>
+                            (192 × 32 × 32)
+                        </div>
+                    </div>
+                    
+                    <!-- Decoder Stage 2 -->
+                    <div class="decoder-row">
+                        <div class="decoder-block">
+                            <div class="stage-title">Decoder Stage 2</div>
+                            <div class="stage-details">
+                                Input: 192 × 32 × 32<br>
+                                Output: 96 × 64 × 64
+                            </div>
+                            <div class="module-box">
+                                <div class="module-title">最终特征精炼</div>
+                                <ul class="module-list">
+                                    <li>上采样 + 跳跃连接</li>
+                                    <li>2个 SMA Transformer Block</li>
+                                    <li>输出96通道特征</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="arrow">→</div>
+                        
+                        <div style="text-align:center; color:#ffd93d;">
+                            + Skip F1<br>
+                            (96 × 64 × 64)
+                        </div>
+                    </div>
+                    
+                    <!-- Final Output -->
+                    <div class="decoder-row">
+                        <div class="stage-box random">
+                            <div class="stage-title">Final Upsample</div>
+                            <div class="stage-details">
+                                ConvTranspose2d(k=4, s=4)<br>
+                                96 × 64 × 64 → 96 × 256 × 256<br>
+                                <span style="color:#ff6b6b">4倍上采样</span>
+                            </div>
+                        </div>
+                        
+                        <div class="arrow">→</div>
+                        
+                        <div class="stage-box sma">
+                            <div class="stage-title">Edge Enhancement</div>
+                            <div class="stage-details">
+                                Sobel边缘检测<br>
+                                特征融合 + 1×1 Conv<br>
+                                <span style="color:#ffd93d">边界增强</span>
+                            </div>
+                        </div>
+                        
+                        <div class="arrow">→</div>
+                        
+                        <div class="stage-box random">
+                            <div class="stage-title">Output</div>
+                            <div class="stage-details">
+                                num_classes × 256 × 256<br>
+                                分割结果<br>
+                                <span style="color:#4CAF50">最终输出</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- SMA Module Detail -->
+            <div class="section">
+                <h2 class="section-title">
+                    🔧 SMA 协同多注意力模块详解
+                    <span class="badge badge-sma">核心创新</span>
+                </h2>
+                
+                <div class="component-grid">
+                    <div class="component-card">
+                        <h4>👁 Pixel Attention (像素注意力)</h4>
+                        <p>
+                            对输入特征的每个像素位置学习重要性权重。
+                            <br><br>
+                            <strong>作用：</strong>识别图像中重要的像素位置，如器官边界和关键区域。
+                            <br><br>
+                            <code>attn = Sigmoid(Conv1×1(x))</code><br>
+                            <code>out = x * attn</code>
+                        </p>
+                    </div>
+                    
+                    <div class="component-card">
+                        <h4>📊 Channel Attention (通道注意力)</h4>
+                        <p>
+                            SE风格的通道重要性加权，使用GAP+MLP计算通道权重。
+                            <br><br>
+                            <strong>作用：</strong>自适应选择对分割任务最有用的特征通道。
+                            <br><br>
+                            <code>avg = GAP(x); max = GMP(x)</code><br>
+                            <code>attn = Sigmoid(FC(avg) + FC(max))</code>
+                        </p>
+                    </div>
+                    
+                    <div class="component-card">
+                        <h4>🗺 Spatial Attention (空间注意力)</h4>
+                        <p>
+                            通过空间维度的池化和卷积生成空间注意力图。
+                            <br><br>
+                            <strong>作用：</strong>关注空间上重要的区域，增强定位能力。
+                            <br><br>
+                            <code>feat = Cat(AvgPool, MaxPool)</code><br>
+                            <code>attn = Sigmoid(Conv7×7(feat))</code>
+                        </p>
+                    </div>
+                    
+                    <div class="component-card">
+                        <h4>🔗 Synergistic Fusion (协同融合)</h4>
+                        <p>
+                            将三种注意力协同融合，产生增强的特征表示。
+                            <br><br>
+                            <strong>融合策略：</strong><br>
+                            1. Pixel和Channel注意力相乘 (元素乘)<br>
+                            2. 结果通过投影层<br>
+                            3. 再经过Spatial注意力<br>
+                            4. 最终加残差连接
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="flow-diagram">
+                    <div class="flow-title">SMA 模块数据流</div>
+                    <div class="flow-steps">
+                        <div class="flow-step input">Input<br>x [B,C,H,W]</div>
+                        <div class="arrow">→</div>
+                        <div class="flow-step sma">Pixel Attn<br>PA(x)</div>
+                        <div class="arrow">⊗</div>
+                        <div class="flow-step sma">Channel Attn<br>CA(x)</div>
+                        <div class="arrow">→</div>
+                        <div class="flow-step process">Fusion Proj<br>1×1 Conv</div>
+                        <div class="arrow">→</div>
+                        <div class="flow-step sma">Spatial Attn<br>SA(·)</div>
+                        <div class="arrow">→</div>
+                        <div class="flow-step output">Output<br>y + x (残差)</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- E-MLP Detail -->
+            <div class="section">
+                <h2 class="section-title">
+                    ⚡ E-MLP 增强型MLP详解
+                </h2>
+                
+                <p style="color: #aaa; margin-bottom: 20px;">
+                    E-MLP 在标准 MLP 的基础上加入深度可分离卷积，捕获局部上下文信息
+                </p>
+                
+                <div class="flow-diagram">
+                    <div class="flow-title">E-MLP 处理流程 (论文描述)</div>
+                    <div class="flow-steps">
+                        <div class="flow-step input">Input<br>[B,N,C]</div>
+                        <div class="arrow">→</div>
+                        <div class="flow-step process">FC1<br>C→4C</div>
+                        <div class="arrow">→</div>
+                        <div class="flow-step process">GELU</div>
+                        <div class="arrow">→</div>
+                        <div class="flow-step sma">Reshape<br>2D</div>
+                        <div class="arrow">→</div>
+                        <div class="flow-step sma">DWConv<br>3×3</div>
+                        <div class="arrow">→</div>
+                        <div class="flow-step sma">PWConv<br>1×1</div>
+                        <div class="arrow">→</div>
+                        <div class="flow-step process">GELU</div>
+                        <div class="arrow">→</div>
+                        <div class="flow-step process">FC2<br>4C→C</div>
+                        <div class="arrow">→</div>
+                        <div class="flow-step output">Output<br>[B,N,C]</div>
+                    </div>
+                </div>
+                
+                <div class="component-grid">
+                    <div class="component-card">
+                        <h4>🎯 DWConv (深度可分离卷积)</h4>
+                        <p>
+                            使用 groups=channels 的 3×3 卷积，每个通道独立卷积。<br>
+                            <strong>优势：</strong>参数量少，计算效率高，能够捕获局部空间信息。
+                        </p>
+                    </div>
+                    
+                    <div class="component-card">
+                        <h4>🔄 PWConv (点卷积)</h4>
+                        <p>
+                            1×1 卷积用于通道间信息交互。<br>
+                            <strong>作用：</strong>融合不同通道的特征，增强特征表达能力。
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Call Graph -->
+            <div class="section">
+                <h2 class="section-title">📞 Call Graph (调用关系图)</h2>
+                
+                <div class="call-graph">
+                    <div class="call-node">
+                        <span class="call-method">SMAFormerV2.forward(x)</span>
+                        <span class="call-description">← 主入口：接收输入图像</span>
+                    </div>
+                    <div class="call-node">
+                        <span class="call-arrow">├─→</span>
+                        <span class="call-method">input_proj(x)</span>
+                        <span class="call-description">← 输入预处理：3×3 Conv + ReLU</span>
+                    </div>
+                    <div class="call-node">
+                        <span class="call-arrow">├─→</span>
+                        <span class="call-method">forward_encoder(x)</span>
+                        <span class="call-description">← 编码器主流程</span>
+                    </div>
+                    <div class="call-node">
+                        <span class="call-arrow">│   ├─→</span>
+                        <span class="call-method">encoder.patch_embed(x)</span>
+                        <span class="call-description">← Swin Patch Embedding</span>
+                    </div>
+                    <div class="call-node">
+                        <span class="call-arrow">│   ├─→</span>
+                        <span class="call-method">encoder.layers[i](x)</span>
+                        <span class="call-description">← Swin Transformer Stage (i=0,1,2,3)</span>
+                    </div>
+                    <div class="call-node">
+                        <span class="call-arrow">│   └─→</span>
+                        <span class="call-method">sma_stages[i](feat)</span>
+                        <span class="call-description">← SMA增强每阶段输出特征</span>
+                    </div>
+                    <div class="call-node">
+                        <span class="call-arrow">│       ├─→</span>
+                        <span class="call-method">pixel_attn(x)</span>
+                        <span class="call-description">← 像素级注意力</span>
+                    </div>
+                    <div class="call-node">
+                        <span class="call-arrow">│       ├─→</span>
+                        <span class="call-method">channel_attn(x)</span>
+                        <span class="call-description">← 通道注意力</span>
+                    </div>
+                    <div class="call-node">
+                        <span class="call-arrow">│       └─→</span>
+                        <span class="call-method">spatial_attn(synergy)</span>
+                        <span class="call-description">← 空间注意力</span>
+                    </div>
+                    <div class="call-node">
+                        <span class="call-arrow">├─→</span>
+                        <span class="call-method">decoder4(f4, f3)</span>
+                        <span class="call-description">← 解码器阶段4：768→384</span>
+                    </div>
+                    <div class="call-node">
+                        <span class="call-arrow">│   ├─→</span>
+                        <span class="call-method">upsample(x)</span>
+                        <span class="call-description">← 转置卷积上采样2×</span>
+                    </div>
+                    <div class="call-node">
+                        <span class="call-arrow">│   ├─→</span>
+                        <span class="call-method">fusion(cat(x, skip))</span>
+                        <span class="call-description">← 跳跃连接融合</span>
+                    </div>
+                    <div class="call-node">
+                        <span class="call-arrow">│   └─→</span>
+                        <span class="call-method">blocks[j](x, H, W)</span>
+                        <span class="call-description">← SMA Transformer Block</span>
+                    </div>
+                    <div class="call-node">
+                        <span class="call-arrow">├─→</span>
+                        <span class="call-method">decoder3(d3, f2)</span>
+                        <span class="call-description">← 解码器阶段3：384→192</span>
+                    </div>
+                    <div class="call-node">
+                        <span class="call-arrow">├─→</span>
+                        <span class="call-method">decoder2(d2, f1)</span>
+                        <span class="call-description">← 解码器阶段2：192→96</span>
+                    </div>
+                    <div class="call-node">
+                        <span class="call-arrow">├─→</span>
+                        <span class="call-method">final_upsample(d1)</span>
+                        <span class="call-description">← 最终4×上采样</span>
+                    </div>
+                    <div class="call-node">
+                        <span class="call-arrow">└─→</span>
+                        <span class="call-method">output(out)</span>
+                        <span class="call-description">← 边缘增强 + 分类头输出</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Forward Flow -->
+            <div class="section">
+                <h2 class="section-title">🔄 Flow Chart (完整数据流向)</h2>
+                
+                <div class="flow-diagram">
+                    <div class="flow-title">SMAFormerV2 完整前向传播流程</div>
+                    <div class="flow-steps">
+                        <div class="flow-step input">Input<br>3×256×256</div>
+                        <div class="arrow">→</div>
+                        <div class="flow-step process">Input Proj<br>3→3</div>
+                        <div class="arrow">→</div>
+                        <div class="flow-step process">Patch Embed<br>96×64×64</div>
+                    </div>
+                    <div style="text-align:center; margin: 15px 0;">
+                        <span class="skip-label">⬇ Swin Encoder + SMA ⬇</span>
+                    </div>
+                    <div class="flow-steps">
+                        <div class="flow-step process">Stage1+SMA<br>96×64×64</div>
+                        <div class="arrow">→</div>
+                        <div class="flow-step process">Stage2+SMA<br>192×32×32</div>
+                        <div class="arrow">→</div>
+                        <div class="flow-step process">Stage3+SMA<br>384×16×16</div>
+                        <div class="arrow">→</div>
+                        <div class="flow-step process">Stage4+SMA<br>768×8×8</div>
+                    </div>
+                    <div style="text-align:center; margin: 15px 0;">
+                        <span class="skip-label">⬇ Symmetric Decoder + Skip Connections ⬇</span>
+                    </div>
+                    <div class="flow-steps">
+                        <div class="flow-step process">Dec4<br>384×16×16</div>
+                        <div class="arrow">→</div>
+                        <div class="flow-step process">Dec3<br>192×32×32</div>
+                        <div class="arrow">→</div>
+                        <div class="flow-step process">Dec2<br>96×64×64</div>
+                        <div class="arrow">→</div>
+                        <div class="flow-step sma">Upsample<br>96×256×256</div>
+                        <div class="arrow">→</div>
+                        <div class="flow-step output">Output<br>C×256×256</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Summary Table -->
+            <div class="section">
+                <h2 class="section-title">📋 权重加载总结</h2>
+                
+                <table class="summary-table">
+                    <thead>
+                        <tr>
+                            <th>模块</th>
+                            <th>参数来源</th>
+                            <th>参数量</th>
+                            <th>说明</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Swin Backbone (Encoder)</td>
+                            <td><span class="status-tag status-pretrained">预训练 94.35%</span></td>
+                            <td>27.52M</td>
+                            <td>ImageNet-1K 预训练，包含Patch Embed和所有Transformer Block</td>
+                        </tr>
+                        <tr>
+                            <td>SMA Stages (4个)</td>
+                            <td><span class="status-tag status-random">随机初始化</span></td>
+                            <td>2.46M</td>
+                            <td>每个Encoder阶段后的SMA增强模块</td>
+                        </tr>
+                        <tr>
+                            <td>Decoder (decoder4/3/2)</td>
+                            <td><span class="status-tag status-random">随机初始化</span></td>
+                            <td>12.52M</td>
+                            <td>包含上采样、跳跃连接融合和SMA Transformer Blocks</td>
+                        </tr>
+                        <tr>
+                            <td>Edge Enhancement</td>
+                            <td><span class="status-tag status-sma">Sobel初始化</span></td>
+                            <td>~0.02M</td>
+                            <td>边缘检测使用Sobel核初始化，融合层随机初始化</td>
+                        </tr>
+                        <tr>
+                            <td>Input/Output Layers</td>
+                            <td><span class="status-tag status-random">随机初始化</span></td>
+                            <td>~0.14M</td>
+                            <td>输入投影和最终分类头</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Performance Comparison -->
+            <div class="section">
+                <h2 class="section-title">📊 与其他模型对比</h2>
+                
+                <table class="summary-table">
+                    <thead>
+                        <tr>
+                            <th>模型</th>
+                            <th>Backbone</th>
+                            <th>参数量</th>
+                            <th>GFLOPs</th>
+                            <th>预训练</th>
+                            <th>特点</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>SMAFormerV2</strong></td>
+                            <td>Swin-Tiny</td>
+                            <td>42.66M</td>
+                            <td>30.50</td>
+                            <td>94.35%</td>
+                            <td>SMA增强 + 边缘增强 + 高效</td>
+                        </tr>
+                        <tr>
+                            <td>SMAFormer (原版)</td>
+                            <td>ViT-Base</td>
+                            <td>~139M</td>
+                            <td>~125</td>
+                            <td>ViT ImageNet</td>
+                            <td>SMA增强，参数量大</td>
+                        </tr>
+                        <tr>
+                            <td>HBFormer</td>
+                            <td>Swin-Tiny</td>
+                            <td>~30M</td>
+                            <td>~80</td>
+                            <td>Swin ImageNet</td>
+                            <td>MFF Decoder + MWA</td>
+                        </tr>
+                        <tr>
+                            <td>TransUNet</td>
+                            <td>ViT+CNN</td>
+                            <td>~105M</td>
+                            <td>~90</td>
+                            <td>ViT ImageNet</td>
+                            <td>混合架构</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Advantages -->
+            <div class="section">
+                <h2 class="section-title">💡 架构优势分析</h2>
+                
+                <div class="component-grid">
+                    <div class="component-card">
+                        <h4>✅ 高效预训练迁移</h4>
+                        <p>
+                            Encoder 94.35% 加载 ImageNet 预训练权重，提供丰富的通用视觉特征表示，
+                            大幅加速收敛并提升泛化能力。相比ViT backbone更加轻量。
+                        </p>
+                    </div>
+                    
+                    <div class="component-card">
+                        <h4>✅ SMA协同注意力增强</h4>
+                        <p>
+                            在每个Encoder阶段后添加SMA模块，融合像素、通道和空间三种注意力，
+                            增强模型对医学图像细节的感知能力。
+                        </p>
+                    </div>
+                    
+                    <div class="component-card">
+                        <h4>✅ 对称Decoder设计</h4>
+                        <p>
+                            Decoder与Encoder对称设计，每层都有跳跃连接和SMA Transformer块，
+                            有效保留空间细节信息，避免信息在深层丢失。
+                        </p>
+                    </div>
+                    
+                    <div class="component-card">
+                        <h4>✅ 边缘增强输出</h4>
+                        <p>
+                            使用Sobel算子检测边缘并与特征融合，
+                            提升分割边界的准确性，特别适合器官边界清晰的医学图像分割任务。
+                        </p>
+                    </div>
+                    
+                    <div class="component-card">
+                        <h4>✅ 参数效率高</h4>
+                        <p>
+                            相比原版SMAFormer减少69%参数量和76%计算量，
+                            在保持性能的同时大幅降低训练和推理成本。
+                        </p>
+                    </div>
+                    
+                    <div class="component-card">
+                        <h4>✅ 分层多尺度特征</h4>
+                        <p>
+                            Swin-Tiny backbone 提供 4 个不同分辨率的特征层 (1/4, 1/8, 1/16, 1/32)，
+                            天然适合医学图像分割任务中的多尺度器官。
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
