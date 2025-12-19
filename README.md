@@ -3,12 +3,15 @@
 If you find our work helpful for your research, please cite:
 
 ```bib
-@article{zheng2024smaformer,
-  title={SMAFormer: Synergistic Multi-Attention Transformer for Medical Image Segmentation},
-  author={Zheng, Fuchen and Chen, Xuhang and Liu, Weihuang and Li, Haolun and Lei, Yingtie and He, Jiahui and Pun, Chi-Man and Zhou, Shounjun},
-  journal={arXiv preprint arXiv:2409.00346},
-  year={2024}
+@inproceedings{zheng2024smaformer,
+  title={Smaformer: Synergistic multi-attention transformer for medical image segmentation},
+  author={Zheng, Fuchen and Chen, Xuhang and Liu, Weihuang and Li, Haolun and Lei, Yingtie and He, Jiahui and Pun, Chi-Man and Zhou, Shoujun},
+  booktitle={2024 IEEE International Conference on Bioinformatics and Biomedicine (BIBM)},
+  pages={4048--4053},
+  year={2024},
+  organization={IEEE}
 }
+
 ```
 # 📋SMAFormer
 
