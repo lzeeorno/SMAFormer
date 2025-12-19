@@ -40,7 +40,7 @@ pip install torch==2.0.0+cu118 torchvision==0.15.1+cu118 torchaudio==2.0.1+cu118
 
 ## 1. 概述
 
-SMAFormerV2 是一个专为医学图像分割设计的深度学习架构，结合了 Swin Transformer 的分层特征提取能力和 Synergistic Multi-Attention (SMA) 机制的细节感知能力。该模型在保持高精度的同时，显著降低了参数量和计算复杂度，特别适合多器官医学图像分割任务。
+SMAFormer 是一个专为医学图像分割设计的深度学习架构，结合了 Swin Transformer 的分层特征提取能力和 Synergistic Multi-Attention (SMA) 机制的细节感知能力。该模型在保持高精度的同时，显著降低了参数量和计算复杂度，特别适合多器官医学图像分割任务。
 
 ### 核心特点
 
