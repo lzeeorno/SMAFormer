@@ -64,19 +64,28 @@ pip install torch==2.0.0+cu118 torchvision==0.15.1+cu118 torchaudio==2.0.1+cu118
 - Other datasets just similar to LiTS2017
 
 ## 2. Prepare the pre_trained weights
-- The weights of the pre-trained SMAFormer could be downloaded. After that, the pre-trained weights should be stored in './pretrained_weights/'. You need to use SMAFormer_LiTS.py net for this pre-trained file [LiTS2017]( https://drive.google.com/file/d/1_ILRDvkOiaB7zZ5c2rHXiiHiZhTtu2-p/view?usp=sharing) and use SMAFormer_Synapse.py net for this pre-trained file [Synapse](https://drive.google.com/file/d/1QemkDxNdVfc_qtCChZFBNVHSwk6zA6UI/view?usp=sharing).
-- To use pre-trained file, you should change 2 places in './train/train_lits2017_png.py'
-  - 1. Change 'default=True' in 'parser.add_argument('--pretrained', default=False, type=str2bool)'
-  - 2. Change 'pretrained_path= "./your_pretrained_file_path"' after 'if args.model_name == 'SMAFormer':'
+- The weights of the pre-trained SMAFormer could be downloaded from [Swin Transformer](https://github.com/SwinTransformer/storage/releases/download/v1.0.0/swin_tiny_patch4_window7_224.pth).
+
 
 ## 3. Train the SMAFormer
 ```bash
-cd ./train/
-python train_lits2017_png.py 
+cd ./
+python train_synapse.py
+
+python train_lits2017.py 
 ```
 
-## 4. Obtain the outputs
-- After trianing, you could obtain the results in './trained_models/LiTS_SMAFormer/'
+## 4. Train the SMAFormer
+```bash
+cd ./
+python test_synapse.py
+
+python test_lits2017.py 
+```
+
+## 5. Obtain the outputs
+- After trianing, you could obtain the results in './results/..'
+- - After testing, you could obtain the results in './test_result/..'
 
   
 
