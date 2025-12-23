@@ -1,3 +1,7 @@
+# [SMAFormer: Synergistic Multi-Attention Transformer for Medical Image Segmentation](https://ieeexplore.ieee.org/abstract/document/10822736?casa_token=hzDdhgw0U4oAAAAA:ahvi4yT2Zy4LVpHsot8ZsqkPoROSzjWGfaaA7GaUX2OqmRVwrYzx-KLslxV1--fABlpcSZUCCA)
+
+
+
 # 🛎 Citation
 
 If you find our work helpful for your research, please cite:
