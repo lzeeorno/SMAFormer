@@ -111,7 +111,7 @@ V2.3版本遵循"**最大化预训练权重利用**"的设计哲学：
 | SMAFormer v1.1 | ViT-Base | 83.36% | 70% | 35+ | ❌ 已废弃 |
 | SMAFormer v1.2 | ViT-Base | 98.12% | 86% | - | ❌ 已废弃 |
 | SMAFormerV2 v2.1| Swin-Tiny | 95.32 | 78.66% | 27.51 | ❌ 已废弃 |
-| SMAFormerV2 v2.2 | Swin-Tiny | 98.39 | 78.24% | 24.47 | ⚠️ 复杂特征 |
+| SMAFormerV2 v2.2 | Swin-Tiny | 98.39 | 80.24% | 24.47 | ⚠️ 复杂特征 |
 | SMAFormerV2 v2.3 | Swin-Tiny | 98.36 | 89.41% | 6.64 | 🌟 **镜像架构** |
 
 ---
