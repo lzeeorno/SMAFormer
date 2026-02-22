@@ -16,11 +16,13 @@ If you find our work helpful for your research, please cite:
   organization={IEEE}
 }
 
-@article{zheng2025hbformer,
+@inproceedings{zheng2025hbformer,
   title={HBFormer: A Hybrid-Bridge Transformer for Microtumor and Miniature Organ Segmentation},
   author={Zheng, Fuchen and Chen, Xinyi and Li, Weixuan and Li, Quanjun and Zhou, Junhua and Guo, Xiaojiao and Chen, Xuhang and Pun, Chi-Man and Zhou, Shoujun},
-  journal={arXiv preprint arXiv:2512.03597},
-  year={2025}
+  booktitle={2025 IEEE International Conference on Bioinformatics and Biomedicine (BIBM)},
+  pages={3343--3348},
+  year={2025},
+  organization={IEEE}
 }
 
 ```
